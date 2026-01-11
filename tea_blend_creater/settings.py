@@ -16,8 +16,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
-DEBUG = 'RENDER' not in os.environ
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+# DEBUG = 'RENDER' not in os.environ
 
 # ALLOWED_HOSTS = []
 ALLOWED_HOSTS = ['tea-blend-creater-service.onrender.com', 'localhost', '127.0.0.1']

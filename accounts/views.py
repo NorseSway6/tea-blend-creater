@@ -94,12 +94,15 @@ class ProfileView(View):
     def get(self, request):
         user = request.user
         
-        user_blends = Blend.objects.filter(user=user).order_by('-created_at')
+        user_blends = Blend.objects.filter(
+            user_interactions__user=user,
+            user_interactions__created_by_user=True
+        ).distinct().order_by('-created_at')
         
         saved_blends = Blend.objects.filter(
             user_interactions__user=user,
             user_interactions__saved=True
-        )
+        ).distinct().order_by('-created_at')
         
         context = {
             'user': user,
@@ -162,20 +165,90 @@ class RateBlendView(View):
             rating_value = int(rating)
             
             if 1 <= rating_value <= 5:
-                _, created = UserBlendInteraction.objects.update_or_create(
+                interaction, created = UserBlendInteraction.objects.update_or_create(
                     user=request.user,
                     blend=blend,
                     defaults={'rating': rating_value}
                 )
                 
-                if created:
-                    profile = UserProfile.objects.get(user=request.user)
-                    profile.blends_rated += 1
-                    profile.save()
+                if created and hasattr(request.user, 'profile'):
+                    profile = request.user.profile
+                    if hasattr(profile, 'blends_rated'):
+                        profile.blends_rated += 1
+                        profile.save()
+                
+                messages.success(request, f'Вы поставили оценку {rating_value}/5')
+            else:
+                messages.error(request, 'Оценка должна быть от 1 до 5')
+        else:
+            messages.error(request, 'Пожалуйста, выберите оценку')
         
-        return redirect(request.META.get('HTTP_REFERER', 'home'))
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+@method_decorator(login_required, name='dispatch')
+class RemoveFromSavedView(View):
+    def post(self, request, blend_id):
+        blend = get_object_or_404(Blend, id=blend_id)
+        
+        interaction = UserBlendInteraction.objects.filter(
+            user=request.user,
+            blend=blend,
+            saved=True
+        ).first()
+        
+        if interaction:
+            interaction.delete()
+            messages.success(request, _('Купаж удален из вашего профиля'))
+        else:
+            messages.warning(request, _('Этот купаж не найден в вашем профиле'))
+        
+        return redirect('/accounts/profile/')
 
 def get_user_role_display(user):
     if not user.is_authenticated:
         return 'Гость'
     return user.get_role_display()
+
+
+def save_blend_to_profile(request, blend_id):
+    blend = get_object_or_404(Blend, id=blend_id)
+    
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    interaction, created = UserBlendInteraction.objects.update_or_create(
+        user=request.user,
+        blend=blend,
+        defaults={'saved': True, 'published': False}
+    )
+    
+    messages.success(request, 'Купаж сохранен в ваш профиль!')
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+def publish_blend(request, blend_id):
+    blend = get_object_or_404(Blend, id=blend_id)
+    
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    interaction, created = UserBlendInteraction.objects.update_or_create(
+        user=request.user,
+        blend=blend,
+        defaults={'saved': True, 'published': True, 'created_by_user': True}
+    )
+    
+    messages.success(request, 'Купаж опубликован и добавлен в каталог!')
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+def cancel_blend(request, blend_id):
+    blend = get_object_or_404(Blend, id=blend_id)
+
+    has_interactions = UserBlendInteraction.objects.filter(blend=blend).exists()
+    
+    if not has_interactions:
+        blend.delete()
+        messages.info(request, 'Создание купажа отменено')
+    else:
+        messages.info(request, 'Купаж уже был сохранен и не был удален')
+    
+    return redirect('/')

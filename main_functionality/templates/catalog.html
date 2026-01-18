@@ -22,6 +22,36 @@
                         </h5>
                     </div>
                     <div class="card-body">
+                        {% if blend.num_ratings > 0 %}
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="text-warning me-2" style="font-size: 1.2rem;">
+                                    {% with avg_rating=blend.avg_rating|floatformat:0 %}
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= avg_rating|add:"0" %}
+                                            ★
+                                        {% else %}
+                                            ☆
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% endwith %}
+                                </span>
+                                <span class="badge bg-light text-dark">
+                                    {{ blend.avg_rating|floatformat:1 }}/5
+                                </span>
+                            </div>
+                            <small class="text-muted">
+                                {{ blend.num_ratings }} оценок
+                            </small>
+                        </div>
+                        {% else %}
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="bi bi-star"></i> Пока нет оценок
+                            </small>
+                        </div>
+                        {% endif %}
+
                         {% if blend.teas.all.0.tea_type %}
                         <span class="badge bg-secondary mb-2">
                             {{ blend.teas.all.0.tea_type }}

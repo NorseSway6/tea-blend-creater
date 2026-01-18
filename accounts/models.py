@@ -69,12 +69,10 @@ class UserProfile(models.Model):
 class UserBlendInteraction(models.Model):
     user = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name='blend_interactions')
     blend = models.ForeignKey('main_functionality.Blend', on_delete=models.CASCADE, related_name='user_interactions')
-    rating = models.IntegerField()
-    saved = models.BooleanField()
-    viewed = models.BooleanField(
-        default=False,
-        verbose_name=_('Просмотрено')
-    )
+    rating = models.IntegerField(null=True, blank=True)
+    saved = models.BooleanField(default=False)
+    created_by_user = models.BooleanField(default=False)
+    published = models.BooleanField(default=False)
     
     class Meta:
         db_table = 'user_blend_interactions'

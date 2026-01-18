@@ -1,9 +1,10 @@
 from django.shortcuts import get_object_or_404, redirect, render
+from accounts.models import UserBlendInteraction
 from blend_algorithms.blend_generator import TeaBlender
 from .forms import TeaBlendForm
 from .models import *
 from django.core.paginator import Paginator
-from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Avg, Q
 
 def index_page(request):
     return render(request, 'content.html')
@@ -46,7 +47,6 @@ def tea_blend_creater_form(request):
                 name=blend_data['name'],
                 theme=blend_data.get('theme'),
                 subtaste=blend_data.get('subtaste'),
-                user=request.user if request.user.is_authenticated else None,
             )
             
             blend.teas.set(blend_data['teas'])
@@ -55,11 +55,22 @@ def tea_blend_creater_form(request):
                 blend.additives.set(blend_data['additives'])
 
             request.session['current_blend_id'] = blend.id
+
+            is_saved_by_user = False
+            if request.user.is_authenticated:
+                from accounts.models import UserBlendInteraction
+                interaction = UserBlendInteraction.objects.filter(
+                    user=request.user,
+                    blend=blend,
+                    saved=True
+                ).first()
+                if interaction:
+                    is_saved_by_user = True
             
             return render(request, 'tea_blend_result.html', {
                 'blend': blend,
                 'user_request': user_request,
-                'is_saved': False,
+                'is_saved_by_user': is_saved_by_user,
             })
     else:
         form = TeaBlendForm()
@@ -68,30 +79,6 @@ def tea_blend_creater_form(request):
         'form': form,
         'price_value': 1000
     })
-
-def save_blend(request):
-    blend_id = request.session.get('current_blend_id')
-    
-    if not blend_id:
-        return redirect('tea_blend_creater_form')
-    
-    try:
-        blend = Blend.objects.get(id=blend_id)
-        
-        if request.user.is_authenticated and not blend.user:
-            blend.user = request.user
-            request.user.save()
-        
-        blend.is_saved = True
-        blend.save()
-        
-        return render(request, 'tea_blend_result.html', {
-            'blend': blend,
-            'is_saved': True,
-        })
-        
-    except Blend.DoesNotExist:
-        return redirect('tea_blend_creater_form')
     
 def regenerate_blend(request):
     user_request_id = request.session.get('user_request_id')
@@ -127,7 +114,8 @@ def regenerate_blend(request):
     if old_blend_id:
         try:
             old_blend = Blend.objects.get(id=old_blend_id)
-            if not old_blend.is_saved:
+            has_interactions = UserBlendInteraction.objects.filter(blend=old_blend).exists()
+            if not has_interactions:
                 old_blend.delete()
         except Blend.DoesNotExist:
             pass
@@ -139,8 +127,19 @@ def regenerate_blend(request):
     })
 
 def catalog_view(request):
-    blends = Blend.objects.filter(is_saved=True).order_by('-created_at')
-
+    published_interactions = UserBlendInteraction.objects.filter(
+        published=True
+    ).select_related('blend')
+    
+    # Получаем уникальные купажи
+    blend_ids = published_interactions.values_list('blend_id', flat=True).distinct()
+    
+    # Аннотируем купажи рейтингами
+    blends = Blend.objects.filter(id__in=blend_ids).annotate(
+        num_ratings=Count('user_interactions__rating', filter=Q(user_interactions__rating__isnull=False)),
+        avg_rating=Avg('user_interactions__rating', filter=Q(user_interactions__rating__isnull=False))
+    ).order_by('-created_at')
+    
     paginator = Paginator(blends, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -151,11 +150,30 @@ def catalog_view(request):
     })
 
 def blend_detail(request, blend_id):
-    blend = get_object_or_404(Blend, id=blend_id, is_saved=True)
+    blend = get_object_or_404(Blend, id=blend_id)
+    
+    # Получаем взаимодействие текущего пользователя
+    user_interaction = None
+    if request.user.is_authenticated:
+        user_interaction = UserBlendInteraction.objects.filter(
+            user=request.user, 
+            blend=blend
+        ).first()
+    
+    # Вычисляем средний рейтинг и количество оценок
+    ratings = blend.user_interactions.filter(rating__isnull=False).values_list('rating', flat=True)
+    average_rating = 0
+    rating_count = 0
+    
+    if ratings:
+        rating_count = len(ratings)
+        average_rating = sum(ratings) / rating_count
     
     return render(request, 'tea_blend_result.html', {
         'blend': blend,
-        'is_saved': True,
+        'user_interaction': user_interaction,
+        'average_rating': average_rating,
+        'rating_count': rating_count,
     })
 
 def about_view(request):

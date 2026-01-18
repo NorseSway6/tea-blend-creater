@@ -23,6 +23,63 @@
                 </div>
                 
                 <div class="card-body">
+                        <div class="mt-4 border-top pt-3">
+                            <h5>Оцените этот купаж:</h5>
+                            
+                            {% if user_interaction and user_interaction.rating %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-star-fill me-2"></i>
+                                Вы уже оценили этот купаж на {{ user_interaction.rating }}/5
+                            </div>
+                            {% endif %}
+                            
+                            <form method="POST" action="{% url 'rate_blend' blend.id %}">
+                                {% csrf_token %}
+                                <div class="rating-stars mb-3">
+                                    <div class="btn-group" role="group">
+                                        <button type="submit" name="rating" value="1" 
+                                                class="btn btn-outline-warning btn-lg {% if user_interaction.rating == 1 %}active{% endif %}">
+                                            1 ★
+                                        </button>
+                                        <button type="submit" name="rating" value="2" 
+                                                class="btn btn-outline-warning btn-lg {% if user_interaction.rating == 2 %}active{% endif %}">
+                                            2 ★
+                                        </button>
+                                        <button type="submit" name="rating" value="3" 
+                                                class="btn btn-outline-warning btn-lg {% if user_interaction.rating == 3 %}active{% endif %}">
+                                            3 ★
+                                        </button>
+                                        <button type="submit" name="rating" value="4" 
+                                                class="btn btn-outline-warning btn-lg {% if user_interaction.rating == 4 %}active{% endif %}">
+                                            4 ★
+                                        </button>
+                                        <button type="submit" name="rating" value="5" 
+                                                class="btn btn-outline-warning btn-lg {% if user_interaction.rating == 5 %}active{% endif %}">
+                                            5 ★
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                            {% if average_rating > 0 %}
+                                <div class="mt-3">
+                                    <p class="mb-1">
+                                        <strong>Средний рейтинг:</strong> 
+                                        <span class="text-warning">
+                                            {% for i in "12345" %}
+                                                {% if forloop.counter <= average_rating|floatformat:0|add:"0" %}
+                                                    ★
+                                                {% else %}
+                                                    ☆
+                                                {% endif %}
+                                            {% endfor %}
+                                        </span>
+                                        {{ average_rating|floatformat:1 }}/5 ({{ rating_count }} оценок)
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+
                     {% if blend.subtaste %}
                     <div class="alert alert-info">
                         <h5>Вкус:</h5>
@@ -68,25 +125,44 @@
                         {% endfor %}
                     </div>
                     {% endif %}
-
                     <div class="mt-4 border-top pt-3">
                         <div class="d-flex gap-3">
-                            {% if not is_saved %}
-                            <form method="post" action="/save/">
+                            {% if not is_saved_by_user %}
+                            <form method="post" action="/blend/save/{{blend.id}}/">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-success btn-lg">
-                                    <i class="bi bi-save"></i> Сохранить купаж
+                                    <i class="bi bi-save"></i> Сохранить в профиль
                                 </button>
                             </form> 
+                            
+                            <form method="post" action="/blend/publish/{{blend.id}}/">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-globe"></i> Опубликовать
+                                </button>
+                            </form>
+                            
                             <form method="post" action="/regenerate/">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-warning btn-lg">
                                     <i class="bi bi-arrow-clockwise"></i> Сгенерировать заново
                                 </button>
                             </form>
-                             <a href="/" class="btn btn-secondary btn-lg">
-                                <i class="bi bi-x-circle me-2"></i>Отменить
-                            </a> 
+                            
+                            <form method="post" action="/blend/cancel/{{blend.id}}/">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-secondary btn-lg">
+                                    <i class="bi bi-x-circle me-2"></i>Отменить
+                                </button>
+                            </form>
+                            {% else %}
+                            <div class="alert alert-info w-100">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Купаж уже сохранен в вашем профиле
+                                <a href="{% url 'profile' %}" class="btn btn-sm btn-outline-success ms-3">
+                                    Перейти в профиль
+                                </a>
+                            </div>
                             {% endif %}                   
                         </div>
                     </div>

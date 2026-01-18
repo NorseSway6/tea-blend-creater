@@ -118,11 +118,6 @@ class Blend(models.Model):
     additives = models.ManyToManyField(Additive, blank=True, related_name='blends')
     subtaste = models.ForeignKey(Subtaste, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    is_saved = models.BooleanField(default=False)
-    user = models.ForeignKey(MyUser, on_delete=models.CASCADE, related_name='created_blends', null=True, blank=True)
-    is_public = models.BooleanField(default=False)
-    average_rating = models.FloatField(default=0.0)
-    rating_count = models.PositiveIntegerField(default=0)
 
     def get_price_estimate(self):
         teas_price = sum(tea.price for tea in self.teas.all()) / max(len(self.teas.all()), 1)

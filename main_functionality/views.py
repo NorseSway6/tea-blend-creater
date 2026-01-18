@@ -3,11 +3,15 @@ from blend_algorithms.blend_generator import TeaBlender
 from .forms import TeaBlendForm
 from .models import *
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
 
 def index_page(request):
     return render(request, 'content.html')
 
 def tea_blend_creater_form(request):
+    if not request.user.is_authenticated:
+        return render(request, 'unauthorized.html')
+
     if request.method == 'POST':
         form = TeaBlendForm(request.POST)
         if form.is_valid():
@@ -42,6 +46,7 @@ def tea_blend_creater_form(request):
                 name=blend_data['name'],
                 theme=blend_data.get('theme'),
                 subtaste=blend_data.get('subtaste'),
+                user=request.user if request.user.is_authenticated else None,
             )
             
             blend.teas.set(blend_data['teas'])
@@ -72,13 +77,18 @@ def save_blend(request):
     
     try:
         blend = Blend.objects.get(id=blend_id)
+        
+        if request.user.is_authenticated and not blend.user:
+            blend.user = request.user
+            request.user.save()
+        
         blend.is_saved = True
         blend.save()
         
         return render(request, 'tea_blend_result.html', {
-                'blend': blend,
-                'is_saved': True,
-            })
+            'blend': blend,
+            'is_saved': True,
+        })
         
     except Blend.DoesNotExist:
         return redirect('tea_blend_creater_form')

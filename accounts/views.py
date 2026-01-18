@@ -11,31 +11,42 @@ from .forms import (UserRegistrationForm, UserLoginForm, UserProfileForm)
 from main_functionality.models import Blend
 
 
-class RegisterView(View):    
+class RegisterView(View):
     def get(self, request):
         if request.user.is_authenticated:
-            return redirect('home')
+            return redirect('/')
         
         form = UserRegistrationForm()
-        return render(request, 'accounts/register.html', {'form': form})
+        next_url = request.GET.get('next', '/accounts/profile/')
+        return render(request, 'accounts/register.html', {
+            'form': form,
+            'next_url': next_url
+        })
     
     def post(self, request):
         form = UserRegistrationForm(request.POST)
         
-        if not form.is_valid():
-            return render(request, 'accounts/register.html', {'form': form})
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    user = form.save(commit=False)
+                    user.set_password(form.cleaned_data['password1'])
+                    user.save()
+                    login(request, user)
+
+                    next_url = request.POST.get('next_url') or request.GET.get('next') or '/accounts/profile/'
+                    return redirect(next_url)
+                    
+            except Exception as e:
+               form.add_error(None, f'Ошибка при регистрации: {str(e)}')
+        else:
+            form.add_error(None, 'Пожалуйста, исправьте ошибки в форме.')
         
-        try:
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password1'])
-            user.save()
-            login(request, user)
-            
-            return redirect('/accounts/profile/')
-            
-        except Exception as e:
-            form.add_error(None, f'Ошибка регистрации: {str(e)}')
-            return render(request, 'accounts/register.html', {'form': form})
+        next_url = request.POST.get('next_url', '/accounts/profile/')
+        return render(request, 'accounts/register.html', {
+            'form': form,
+            'next_url': next_url
+        })
 
 
 class LoginView(View):
@@ -44,7 +55,11 @@ class LoginView(View):
             return redirect('/')
         
         form = UserLoginForm()
-        return render(request, 'accounts/login.html', {'form': form})
+        next_url = request.GET.get('next', '/accounts/profile/')
+        return render(request, 'accounts/login.html', {
+            'form': form,
+            'next_url': next_url
+        })
     
     def post(self, request):
         form = UserLoginForm(request, data=request.POST)
@@ -56,13 +71,15 @@ class LoginView(View):
             
             if user is not None:
                 login(request, user)
-                messages.success(request, _('Вы успешно вошли в систему!'))
                 
-                next_url = request.GET.get('next', '/accounts/profile/')
+                next_url = request.POST.get('next_url') or request.GET.get('next') or '/accounts/profile/'
                 return redirect(next_url)
         
-        messages.error(request, _('Неверное имя пользователя или пароль'))
-        return render(request, 'accounts/login.html', {'form': form})
+        next_url = request.POST.get('next_url', '/accounts/profile/')
+        return render(request, 'accounts/login.html', {
+            'form': form,
+            'next_url': next_url
+        })
 
 
 class LogoutView(View):

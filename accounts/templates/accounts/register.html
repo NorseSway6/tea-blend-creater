@@ -4,6 +4,7 @@
 {% block title %}Регистрация - Чайные купажи{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static '/css/index.css' %}">
 <link rel="stylesheet" href="{% static '/css/register.css' %}">
 {% endblock %}
 
@@ -27,6 +28,8 @@
                 
                 <form method="POST" action="/accounts/register/">
                     {% csrf_token %}
+
+                    <input type="hidden" name="next_url" value="{{ next_url|default:'home' }}">
                     
                     {% for field in form %}
                         <div class="mb-3">

@@ -2,31 +2,57 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.utils.translation import gettext_lazy as _
+
 class MyUser(AbstractUser):
     class Role(models.TextChoices):
-        GUEST = 'guest'
-        USER = 'user'
-        ADMIN = 'admin'
+        GUEST = 'guest', _('Гость')
+        USER = 'user', _('Пользователь')
+        ADMIN = 'admin', _('Администратор')
     
-    role = models.CharField(max_length=20,choices=Role.choices,default=Role.GUEST)
-    email = models.EmailField(max_length=20)
-    avatar = models.ImageField(upload_to='avatars/')
-    preferences = models.JSONField(default=list,blank=True,)
-
-    def __str__(self):
-        return f'{self.username} ({self.get_role_display()})'
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.USER)
+    email = models.EmailField(max_length=255, unique=True, verbose_name=_('Email'))
+    avatar = models.ImageField(upload_to='avatars/',blank=True, null=True)
+    preferences = models.JSONField(default=list,blank=True)
     
     class Meta:
         db_table = 'users'
     
-    def is_admin(self):
-        return self.role == self.Role.ADMIN or self.is_superuser
+    def __str__(self):
+        return f'{self.username} ({self.get_role_display()})'
+
+    @property
+    def is_admin_role(self):
+        return self.role == self.Role.ADMIN
     
-    def is_regular_user(self):
+    @property 
+    def is_regular_user_role(self):
         return self.role == self.Role.USER
     
+    @property
+    def is_guest_role(self):
+        return self.role == self.Role.GUEST
+
+    def is_admin(self):
+        return self.is_superuser or self.role == self.Role.ADMIN
+    
+    def is_regular_user(self):
+        return self.role == self.Role.USER and not self.is_superuser
+    
     def is_guest(self):
-        return self.role == self.Role.GUEST or not self.is_authenticated
+        return not self.is_authenticated or self.role == self.Role.GUEST
+    
+    def save(self, *args, **kwargs):
+        if self.is_superuser or self.is_staff:
+            self.role = self.Role.ADMIN
+        elif not self.role:
+            self.role = self.Role.USER
+        if not self.preferences:
+            self.preferences = {}
+        
+        super().save(*args, **kwargs)
 
 
 class UserProfile(models.Model):

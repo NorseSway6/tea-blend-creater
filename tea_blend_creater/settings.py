@@ -16,8 +16,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-# DEBUG = 'RENDER' not in os.environ
+# DEBUG = True
+DEBUG = 'RENDER' not in os.environ
 
 # ALLOWED_HOSTS = []
 ALLOWED_HOSTS = ['tea-blend-creater-service.onrender.com', 'localhost', '127.0.0.1']
@@ -26,6 +26,7 @@ CSRF_TRUSTED_ORIGINS = ['https://tea-blend-creater-service.onrender.com', 'http:
 # Application definition
 
 INSTALLED_APPS = [
+    'accounts.apps.AccountsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -35,7 +36,6 @@ INSTALLED_APPS = [
     'main_functionality',
     'parser',
     'blend_algorithms',
-    'accounts.apps.AccountsConfig',
     'visualization',
 ]
 
@@ -78,44 +78,23 @@ LOGOUT_REDIRECT_URL = '/'
 SESSION_COOKIE_AGE = 86400
 SESSION_SAVE_EVERY_REQUEST = True
 
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {
-            'min_length': 8,
-        }
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
 # DATABASES = {
-#     'default': dj_database_url.config(
-#         # Replace this value with your local database's connection string.
-#         default='DB_HOST',
-#         conn_max_age=600
-#     )
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
 # }
-
-
-
+DATABASES = {
+    'default': dj_database_url.config(
+        # Replace this value with your local database's connection string.
+        default='DB_HOST',
+        conn_max_age=600
+    )
+}
 
 
 # Password validation

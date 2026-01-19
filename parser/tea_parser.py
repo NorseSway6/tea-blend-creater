@@ -134,9 +134,15 @@ class TeaParser():
         price_element = soup.select_one('.catalog-card__price-value')
         if price_element:
             price_text = price_element.text.strip()
+            
+            price_text = price_text.replace(' ', '').replace('руб.', '').strip()
+            
             numbers = re.findall(r'\d+', price_text)
-            return int(numbers[0]) if numbers else 0
-        return 0 
+            
+            if numbers:
+                return int(''.join(numbers))
+            return 0
+        return 0
     
     def  get_additive(self, url):
         response = self.session.get(url, timeout=15)

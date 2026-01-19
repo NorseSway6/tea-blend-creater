@@ -79,7 +79,7 @@ def taste_radar_chart(request):
     saved_count = user_interactions.filter(saved=True).count()
     rated_count = user_interactions.filter(rating__isnull=False).count()
     
-    legend_text = f"Создано: {created_count}, Сохранено: {saved_count}, Оценено: {rated_count}"
+    legend_text = f"Опубликовано: {created_count}, Создано: {saved_count}, Оценено: {rated_count}"
     ax.text(0.5, -0.15, legend_text, transform=ax.transAxes, 
             ha='center', fontsize=10, style='italic', color='gray')
     

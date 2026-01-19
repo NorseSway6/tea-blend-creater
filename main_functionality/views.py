@@ -153,7 +153,13 @@ def catalog_view(request):
 
 def blend_detail(request, blend_id):
     blend = get_object_or_404(Blend, id=blend_id)
-    
+
+    interaction = UserBlendInteraction.objects.filter(
+        blend=blend, 
+        created_by_user=True
+    ).first()
+    blend_creator = interaction.user if interaction else None
+
     user_interaction = None
     if request.user.is_authenticated:
         user_interaction = UserBlendInteraction.objects.filter(
@@ -171,6 +177,7 @@ def blend_detail(request, blend_id):
     
     return render(request, 'tea_blend_result.html', {
         'blend': blend,
+        'blend_creator':blend_creator,
         'user_interaction': user_interaction,
         'average_rating': average_rating,
         'rating_count': rating_count,

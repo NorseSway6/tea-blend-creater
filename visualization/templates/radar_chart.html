@@ -71,21 +71,6 @@
                     </h4>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Создано купажей:</span>
-                            <span class="badge bg-success">{{ total_created }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Сохранено купажей:</span>
-                            <span class="badge bg-primary">{{ total_saved }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-3">
-                            <span>Оценено купажей:</span>
-                            <span class="badge bg-warning text-dark">{{ total_rated }}</span>
-                        </div>
-                    </div>
-                    <hr>
                     <h6>Топ вкусов:</h6>
                     {% for taste in taste_data|slice:":5" %}
                     <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
@@ -113,52 +98,6 @@
                         <a href="/accounts/profile/" class="btn btn-outline-secondary">
                             <i class="bi bi-person me-2"></i>Вернуться в профиль
                         </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="bi bi-list-ol"></i> Детальная статистика по вкусам
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Вкус</th>
-                                    <th>Количество купажей</th>
-                                    <th>Процент от максимума</th>
-                                    <th>Прогресс</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for taste in taste_data %}
-                                <tr>
-                                    <td class="fw-bold">{{ taste.name }}</td>
-                                    <td>
-                                        <span class="badge bg-primary">{{ taste.count }}</span>
-                                    </td>
-                                    <td>
-                                        {{ taste.percentage|floatformat:1 }}%
-                                    </td>
-                                    <td>
-                                        <div class="progress" style="height: 10px;">
-                                            <div class="progress-bar bg-success" 
-                                                 style="width: {{ taste.percentage }}%">
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,186 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block title %}Вкусовой профиль {{ user.username }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static '/css/index.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold">
+                <i class="bi bi-graph-up"></i> Вкусовой профиль
+            </h1>
+            <p class="lead text-muted">
+                Анализ вкусов на основе созданных вами купажей
+            </p>
+        </div>
+    </div>
+
+    {% if not has_data %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info text-center py-5">
+                <i class="bi bi-graph-up display-1 text-muted mb-3"></i>
+                <h3>{% if message %}{{ message }}{% else %}У вас еще нет данных для анализа{% endif %}</h3>
+                <p class="mb-4">Взаимодействуйте с купажами, чтобы увидеть свою вкусовую диаграмму</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="/blend_creater/" class="btn btn-success btn-lg">
+                        <i class="bi bi-magic me-2"></i>Создать купаж
+                    </a>
+                    <a href="/catalog/" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-eye me-2"></i>Просмотреть каталог
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    {% if message %}
+    <div class="alert alert-warning alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle me-2"></i>{{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-radar"></i> Радар вкусов
+                    </h4>
+                </div>
+                <div class="card-body text-center p-3">
+                    <img src="data:image/png;base64,{{ chart_image }}" 
+                         alt="Вкусовой профиль" 
+                         class="img-fluid rounded"
+                         style="max-height: 500px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-bar-chart"></i> Статистика
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Создано купажей:</span>
+                            <span class="badge bg-success">{{ total_created }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Сохранено купажей:</span>
+                            <span class="badge bg-primary">{{ total_saved }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Оценено купажей:</span>
+                            <span class="badge bg-warning text-dark">{{ total_rated }}</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6>Топ вкусов:</h6>
+                    {% for taste in taste_data|slice:":5" %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                        <div>
+                            <span class="fw-bold">{{ taste.name }}</span>
+                            <br>
+                            <small class="text-muted">{{ taste.count }} купажей</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">{{ taste.percentage|floatformat:0 }}%</span>
+                            <br>
+                            <small class="text-muted">от макс.</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="card shadow mt-3">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/all_tastes_radar/" class="btn btn-outline-primary">
+                            <i class="bi bi-globe me-2"></i>Общая статистика
+                        </a>
+                        <a href="/accounts/profile/" class="btn btn-outline-secondary">
+                            <i class="bi bi-person me-2"></i>Вернуться в профиль
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ol"></i> Детальная статистика по вкусам
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Вкус</th>
+                                    <th>Количество купажей</th>
+                                    <th>Процент от максимума</th>
+                                    <th>Прогресс</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for taste in taste_data %}
+                                <tr>
+                                    <td class="fw-bold">{{ taste.name }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ taste.count }}</span>
+                                    </td>
+                                    <td>
+                                        {{ taste.percentage|floatformat:1 }}%
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 10px;">
+                                            <div class="progress-bar bg-success" 
+                                                 style="width: {{ taste.percentage }}%">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.progress {
+    background-color: #f0f0f0;
+    border-radius: 5px;
+}
+.progress-bar {
+    border-radius: 5px;
+}
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+.badge {
+    font-size: 0.85em;
+}
+</style>
+{% endblock %}

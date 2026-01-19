@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'parser',
     'blend_algorithms',
     'accounts.apps.AccountsConfig',
+    'visualization',
 ]
 
 MIDDLEWARE = [

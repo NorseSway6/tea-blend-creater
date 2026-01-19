@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 from main_functionality.views import *
 from accounts.views import *
+from visualization.views import *
 
 
 urlpatterns = [
@@ -23,4 +24,6 @@ urlpatterns = [
     path('blend/save/<int:blend_id>/', save_blend_to_profile),
     path('blend/publish/<int:blend_id>/', publish_blend),
     path('blend/cancel/<int:blend_id>/', cancel_blend),
+    path('taste_radar_chart/', taste_radar_chart),
+    path('all_tastes_radar/', all_tastes_radar),
 ]

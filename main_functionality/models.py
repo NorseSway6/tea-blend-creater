@@ -1,7 +1,5 @@
 from django.db import models
 
-from accounts.models import MyUser
-
 class UserRequest(models.Model): 
     theme = models.CharField(max_length=255)
     taste_type = models.CharField(max_length=255)

@@ -5,6 +5,7 @@ from .forms import TeaBlendForm
 from .models import *
 from django.core.paginator import Paginator
 from django.db.models import Count, Avg, Q
+from accounts.models import UserProfile
 
 def index_page(request):
     return render(request, 'content.html')
@@ -66,6 +67,9 @@ def tea_blend_creater_form(request):
                 ).first()
                 if interaction:
                     is_saved_by_user = True
+
+            profile, created = UserProfile.objects.get_or_create(user=request.user)
+            profile.update_subtaste_stats()
             
             return render(request, 'tea_blend_result.html', {
                 'blend': blend,
@@ -131,10 +135,8 @@ def catalog_view(request):
         published=True
     ).select_related('blend')
     
-    # Получаем уникальные купажи
     blend_ids = published_interactions.values_list('blend_id', flat=True).distinct()
     
-    # Аннотируем купажи рейтингами
     blends = Blend.objects.filter(id__in=blend_ids).annotate(
         num_ratings=Count('user_interactions__rating', filter=Q(user_interactions__rating__isnull=False)),
         avg_rating=Avg('user_interactions__rating', filter=Q(user_interactions__rating__isnull=False))
@@ -152,7 +154,6 @@ def catalog_view(request):
 def blend_detail(request, blend_id):
     blend = get_object_or_404(Blend, id=blend_id)
     
-    # Получаем взаимодействие текущего пользователя
     user_interaction = None
     if request.user.is_authenticated:
         user_interaction = UserBlendInteraction.objects.filter(
@@ -160,7 +161,6 @@ def blend_detail(request, blend_id):
             blend=blend
         ).first()
     
-    # Вычисляем средний рейтинг и количество оценок
     ratings = blend.user_interactions.filter(rating__isnull=False).values_list('rating', flat=True)
     average_rating = 0
     rating_count = 0

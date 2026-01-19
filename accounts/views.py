@@ -247,8 +247,5 @@ def cancel_blend(request, blend_id):
     
     if not has_interactions:
         blend.delete()
-        messages.info(request, 'Создание купажа отменено')
-    else:
-        messages.info(request, 'Купаж уже был сохранен и не был удален')
     
-    return redirect('/')
+    return redirect('/catalog')

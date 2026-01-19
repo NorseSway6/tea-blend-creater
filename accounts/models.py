@@ -1,10 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
-
-from django.db import models
-from django.contrib.auth.models import AbstractUser
-from django.utils.translation import gettext_lazy as _
+from main_functionality.models import Blend
 
 class MyUser(AbstractUser):
     class Role(models.TextChoices):
@@ -57,10 +54,32 @@ class MyUser(AbstractUser):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(MyUser, on_delete=models.CASCADE, related_name='profile')
-    blends_created = models.IntegerField()
-
+    blends_created = models.IntegerField(default=0)
+    blends_rated = models.IntegerField(default=0)
+    subtaste_stats = models.JSONField(default=dict, blank=True)
+    
     def __str__(self):
-        return f'{self.user.username}'
+        return f'{self.user.username} профиль'
+    
+    def update_subtaste_stats(self):
+        
+        user_blends = Blend.objects.filter(
+            user_interactions__user=self.user,
+            user_interactions__created_by_user=True
+        )
+        
+        stats = {}
+        for blend in user_blends:
+            if blend.subtaste:
+                subtaste_name = blend.subtaste.name
+                if subtaste_name in stats:
+                    stats[subtaste_name] += 1
+                else:
+                    stats[subtaste_name] = 1
+        
+        self.subtaste_stats = stats
+        self.blends_created = user_blends.count()
+        self.save()
     
     class Meta:
         db_table = 'user_profiles'

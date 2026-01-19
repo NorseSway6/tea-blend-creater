@@ -3,10 +3,21 @@ from .models import *
 from django.db.models import Min, Count
 
 class TeaBlendForm(forms.Form):
+    blend_name = forms.CharField(
+        label='Название купажа',
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': 'Придумайте название для вашего купажа'
+        })
+    )
+
     theme = forms.ModelChoiceField(
         label='Тема купажа',
         queryset= Theme.objects.order_by('name'),
         empty_label='Выберите тему купажа',
+        required=True,
         widget=forms.Select(attrs={'class': 'form-select form-select-lg'})
     )
     

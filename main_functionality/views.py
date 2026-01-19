@@ -20,6 +20,8 @@ def tea_blend_creater_form(request):
 
             theme = form.cleaned_data['theme']
 
+            user_blend_name = form.cleaned_data.get('blend_name', '').strip()
+
             user_request = UserRequest.objects.create(
                 theme=theme.name if theme else "",
                 taste_type=form.cleaned_data['taste_type'],
@@ -43,9 +45,11 @@ def tea_blend_creater_form(request):
                 'additive_ids': [add.id for add in blend_data['additives']],
                 'subtaste_id': blend_data['subtaste'].id if blend_data.get('subtaste') else None,
             }
+
+            final_blend_name = user_blend_name if user_blend_name else blend_data['name']
             
             blend = Blend.objects.create(
-                name=blend_data['name'],
+                name=final_blend_name,
                 theme=blend_data.get('theme'),
                 subtaste=blend_data.get('subtaste'),
             )
@@ -102,8 +106,17 @@ def regenerate_blend(request):
     if not blend_data or not blend_data['teas']:
         return redirect('tea_blend_creater_form')
     
+    old_blend_name = blend_data['name']
+    if old_blend_id:
+        try:
+            old_blend = Blend.objects.get(id=old_blend_id)
+            if old_blend.name != blend_data['name']:
+                old_blend_name = old_blend.name
+        except Blend.DoesNotExist:
+            pass
+    
     new_blend = Blend.objects.create(
-        name=blend_data['name'],
+        name=old_blend_name,
         theme=blend_data.get('theme'),
         subtaste=blend_data.get('subtaste')
     )

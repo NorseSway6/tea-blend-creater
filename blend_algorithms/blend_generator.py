@@ -38,18 +38,25 @@ class TeaBlender:
             if theme and theme.additives.exists():
                 theme_additives = theme.additives.all()
                 selected_additives = list(theme_additives[:3])
-            elif subtaste:
-                additive_relations = SubtasteAdditive.objects.filter(
-                    subtaste=subtaste
-                ).select_related('additive')[:3]
-                selected_additives = [rel.additive for rel in additive_relations]
-        
-        if theme:
+            else:
+                if subtaste:
+                    additive_relations = SubtasteAdditive.objects.filter(
+                        subtaste=subtaste
+                    ).select_related('additive')[:3]
+                    selected_additives = [rel.additive for rel in additive_relations]
+                
+                if not selected_additives and subtaste and subtaste.base_taste:
+                    related_subtastes = Subtaste.objects.filter(base_taste=subtaste.base_taste)
+                    additive_relations = SubtasteAdditive.objects.filter(
+                        subtaste__in=related_subtastes
+                    ).select_related('additive')[:3]
+                    selected_additives = [rel.additive for rel in additive_relations]
+
+        if theme and theme.name!="нет":
             theme_part = theme.name
+            blend_name = f"{theme_part}: {user_request.tea_type} - {user_request.taste_type}"
         else:
-            theme_part = "Персональный"
-        
-        blend_name = f"{theme_part}: {user_request.tea_type} - {user_request.taste_type}"
+            blend_name = f"{user_request.tea_type} - {user_request.taste_type}"
         
         if theme and theme.subtastes.exists() and not subtaste:
             recommended_subtaste = theme.subtastes.first()
